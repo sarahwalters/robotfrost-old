@@ -2,7 +2,7 @@ var express = require('express');
 var app = express();
 var cool = require('cool-ascii-faces');
 var pg = require('pg');
-var ph = require('phonemenon');
+var cmu = require('cmudict').CMUDict;
 
 app.set('port', (process.env.PORT || 5000))
 app.use(express.static(__dirname + '/public'))
@@ -12,7 +12,9 @@ app.get('/', function(request, response) {
 	var times = process.env.TIMES || 5
 	for (i=0; i<times; i++)
 		result += cool()
-	result += ph()
+
+	var c = new cmu();
+	result += c.get('prosaic');
 	response.send(result);
 })
 
