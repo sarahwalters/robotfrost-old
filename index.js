@@ -1,28 +1,34 @@
+/* TODO:
+-> multiple js files
+-> strip punctuation
+-> run db locally
+-> subarray method
+*/
+
+
+/* REQUIRE STATEMENTS */
 var express = require('express');
 var app = express();
-var cool = require('cool-ascii-faces');
 var pg = require('pg');
 var fs = require('fs');
 var cmu = require('cmudict').CMUDict;
+
+
+/* INITIALIZATIONS */
 var c = new cmu();
 
-var text = ''
 
-app.set('port', (process.env.PORT || 5000))
+/* APP ROUTING */
+app.set('port', 5000) //(process.env.PORT || 5000))
 app.use(express.static(__dirname + '/public'))
 
 app.get('/', function(request, response) {
-	var result = ''
-	var times = process.env.TIMES || 5
-	for (var i=0; i<times; i++) {
-		//result += cool()
-	}
-
 	//result = isRhyme('prosaic', 'mosaic', 1);
 	//result = rhymePart('prosaic', 2);
 	//response.send(result);
 
-	rhymePairs('text/twoCities.txt', response);
+	pipeline = [read, process, markov];
+	advancePipeline('text/twoCities.txt', response, pipeline);
 })
 
 app.get('/db', function(request, response) {
@@ -44,35 +50,108 @@ app.listen(app.get('port'), function() {
 	console.log("Node app is running at localhost:" + app.get('port'))
 })
 
-/* TEXT INPUT */
-function rhymePairs(filename, response) {
-	fs.readFile(filename, 'ascii', function(err, data) {
-		// individual words
-		words = data.split(/\s/);
 
+/* PIPELINE HANDLING */
+function advancePipeline(data, response, pipeline) {
+	if (pipeline.length > 0) {
+		callback = pipeline[0];
 
-		// rhyme parts
-		rhymeDict = {};
-		rhymeParts = [];
-		for (var i=0; i < words.length; i++) {
-			w = words[i].toLowerCase();
-			rp = rhymePart(w,1);
-			if (rp != null) {
-				if (rp in rhymeDict) {
-					if (rhymeDict[rp].indexOf(w) < 0) {
-						rhymeDict[rp].push(w);
-					}
-				} else {
-					rhymeDict[rp] = [w];
-				}
-			}
+		// replace with subarray method
+		remPipeline = [];
+		for (i=1; i < pipeline.length; i++) {
+			remPipeline.push(pipeline[i]);
 		}
 
-		response.send(rhymeDict);
+		callback(data, response, remPipeline);
+	} else {
+		response.send(data);
+	}
+}
+
+/* PIPELINE STAGES */
+function read(filename, response, pipeline) {
+	fs.readFile(filename, 'ascii', function(err, data) {
+		advancePipeline(data, response, pipeline);
 	});
 }
 
-/* CHECKING FOR RHYME */
+function process(data, response, pipeline) {
+	// get words
+	wordsRaw = data.split(/\s/);
+	
+	// strip empty words
+	words = [];
+	for (var i=0; i < wordsRaw.length; i++) {
+		word = wordsRaw[i];
+		if (word.length > 0) {
+			words.push(word);
+		}
+	}
+
+	// build lookups for rhyme, markov, & stress
+	var rhyme = {};
+	var prev = {};
+	var post = {};
+	for (var i=0; i < words.length; i++) {
+		w = words[i].toLowerCase();
+		rp = rhymePart(w,1);
+		if (rp != null) { // ie word can be broken into phonemes
+			// preceding word
+			if (i > 0) {
+				prevWord = words[i-1].toLowerCase();
+				if (w in prev) {
+					prev[w].push(prevWord);
+				} else {
+					prev[w] = [prevWord];
+				}
+			}
+
+			// following word
+			if (i < words.length-1) {
+				postWord = words[i+1].toLowerCase();
+				if (w in post) {
+					post[w].push(postWord);
+				} else {
+					post[w] = [postWord];
+				}
+			}
+
+			// rhyme part
+			if (rp in rhyme) {
+				if (rhyme[rp].indexOf(w) < 0) {
+					rhyme[rp].push(w);
+				}
+			} else {
+				rhyme[rp] = [w];
+			}
+		}
+	}
+
+	advancePipeline(post, response, remPipeline);
+}
+
+function markov(wordMap, response, pipeline) {
+	count = 0;
+	endCount = 8;
+	res = '';
+
+	seed = 'war';
+	res += seed;
+
+	while (count < endCount) {
+		chooseFrom = wordMap[seed];
+		seed = chooseFrom[chooseFrom.length-1];
+		res += ' ' + seed;
+		count++;
+	}
+
+	advancePipeline(res, response, pipeline);
+}
+
+
+
+/* UTILITIES */
+/* ...checking for rhyme */
 function isRhyme(word1, word2, n) {
 	syls1 = syllables(word1);
 	syls2 = syllables(word2);
@@ -104,7 +183,7 @@ function rhymePart(word, n) {
 }
 
 
-/* SYLLABLE SPLITTING */
+/* ...syllable splitting */
 function syllables(word) {
 	try {
 		var phonemes = c.get(word).split(' '); // array
