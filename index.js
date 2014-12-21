@@ -6,6 +6,8 @@ var fs = require('fs');
 var cmu = require('cmudict').CMUDict;
 var c = new cmu();
 
+var text = ''
+
 app.set('port', (process.env.PORT || 5000))
 app.use(express.static(__dirname + '/public'))
 
@@ -17,8 +19,8 @@ app.get('/', function(request, response) {
 	}
 
 	//result += isRhyme('prosaic', 'mosaic', 1);
-	result = read('text/twoCities.txt');
-	response.send(result);
+	result = read('text/twoCities.txt', response);
+	//response.send(result);
 })
 
 app.get('/db', function(request, response) {
@@ -40,16 +42,11 @@ app.listen(app.get('port'), function() {
 })
 
 /* TEXT INPUT */
-function read(filename) {
-	res = ''
-	fs.readFile(filename, 'utf8', function(err, data) {
-		if (err) throw err;
-		res = err;
+function read(filename, response) {
+	fs.readFile(filename, 'ascii', function(err, data) {
+		response.send(data);
 	});
-	return filename
-	//return res;
 }
-
 
 /* CHECKING FOR RHYME */
 function isRhyme(word1, word2, n) {
