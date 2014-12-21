@@ -28,6 +28,7 @@ app.get('/', function(request, response) {
 	//response.send(result);
 
 	pipeline = [read, process, markov];
+	console.log('Starting pipeline');
 	advancePipeline('text/twoCities.txt', response, pipeline);
 	//response.send(overlap(['a', 'b', 'c'], ['b', 'd']));
 })
@@ -72,6 +73,7 @@ function advancePipeline(data, response, pipeline) {
 /* PIPELINE STAGES */
 function read(filename, response, pipeline) {
 	fs.readFile(filename, 'ascii', function(err, data) {
+		console.log('Starting process');
 		advancePipeline(data, response, pipeline);
 	});
 }
@@ -139,6 +141,7 @@ function process(data, response, pipeline) {
 		}
 	}
 
+	console.log('Starting Markov');
 	advancePipeline([rhyme, stress, prev, post], response, remPipeline);
 }
 
@@ -180,6 +183,7 @@ function markov(dicts, response, pipeline) {
 		stressPattern = stressPattern.substring(removeLength);
 	}
 
+	console.log('Done');
 	advancePipeline(out, response, pipeline);
 }
 
