@@ -1,3 +1,4 @@
+// ...checking for rhyme
 exports.isRhyme = function (syls1, syls2, n) {
 	if (syls1 == null || syls2 == null) {
 		return false;
