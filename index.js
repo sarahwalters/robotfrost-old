@@ -27,7 +27,7 @@ app.get('/', function(request, response) {
 	//result = rhymePart('prosaic', 2);
 	//response.send(result);
 
-	pipeline = [read, process, markov];
+	//pipeline = [read, process, markov];
 	console.log('Starting pipeline');
 	//advancePipeline('text/twoCities.txt', response, pipeline);
 	//response.send(overlap(['a', 'b', 'c'], ['b', 'd']));
@@ -53,7 +53,7 @@ app.listen(app.get('port'), function() {
 })
 
 
-/* PIPELINE HANDLING */
+/* PIPELINE HANDLING 
 function advancePipeline(data, response, pipeline) {
 	if (pipeline.length > 0) {
 		callback = pipeline[0];
@@ -70,7 +70,7 @@ function advancePipeline(data, response, pipeline) {
 	}
 }
 
-/* PIPELINE STAGES */
+// PIPELINE STAGES 
 function read(filename, response, pipeline) {
 	fs.readFile(filename, 'ascii', function(err, data) {
 		console.log('Starting process');
@@ -189,8 +189,8 @@ function markov(dicts, response, pipeline) {
 
 
 
-/* UTILITIES */
-/* ...extracting stress pattern */
+// UTILITIES
+// ...extracting stress pattern
 function getStresses(word) {
 	syls = syllables(word);
 	res = '';
@@ -205,7 +205,7 @@ function getStresses(word) {
 	return res;
 }
 
-/* ...checking for rhyme */
+// ...checking for rhyme
 function isRhyme(word1, word2, n) {
 	syls1 = syllables(word1);
 	syls2 = syllables(word2);
@@ -251,7 +251,7 @@ function rhymePart(word, n) {
 }
 
 
-/* ...syllable splitting */
+// ...syllable splitting
 function syllables(word) {
 	try {
 		var phonemes = c.get(word).split(' '); // array
@@ -317,13 +317,13 @@ function findVowels(phonemes) {
 	return indices;
 }
 
-/* ...random numbers */
+// ...random numbers
 function randint(resolution) {
 	rand = Math.random();
 	return Math.floor(rand*resolution);
 }
 
-/* ...list management */
+// ...list management
 function overlap(list1, list2) {
 	var overlap = [];
 	for (var i=0; i < list1.length; i++) {
@@ -341,3 +341,4 @@ function concatenate(list1, list2) {
 	}
 	return list1;
 }
+*/
