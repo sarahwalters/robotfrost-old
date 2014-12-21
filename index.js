@@ -29,7 +29,7 @@ app.get('/', function(request, response) {
 
 	pipeline = [read, process, markov];
 	console.log('Starting pipeline');
-	advancePipeline('text/twoCities.txt', response, pipeline);
+	//advancePipeline('text/twoCities.txt', response, pipeline);
 	//response.send(overlap(['a', 'b', 'c'], ['b', 'd']));
 })
 
