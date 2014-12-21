@@ -27,7 +27,7 @@ app.get('/', function(request, response) {
 	//result = rhymePart('prosaic', 2);
 	//response.send(result);
 
-	//pipeline = [read, process, markov];
+	pipeline = [read, digest, markov];
 	console.log('Starting pipeline');
 	advancePipeline('text/twoCities.txt', response, pipeline);
 	//response.send(overlap(['a', 'b', 'c'], ['b', 'd']));
@@ -78,7 +78,7 @@ function read(filename, response, pipeline) {
 	});
 }
 
-function process(data, response, pipeline) {
+function digest(data, response, pipeline) {
 	// get words
 	wordsRaw = data.split(/\W/) // at non-alpha characters (only words)
 	
