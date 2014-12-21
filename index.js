@@ -29,8 +29,7 @@ app.get('/', function(request, response) {
 
 	//pipeline = [read, process, markov];
 	console.log('Starting pipeline');
-	response.send('hi');
-	//advancePipeline('text/twoCities.txt', response, pipeline);
+	advancePipeline('text/twoCities.txt', response, pipeline);
 	//response.send(overlap(['a', 'b', 'c'], ['b', 'd']));
 })
 
@@ -54,7 +53,7 @@ app.listen(app.get('port'), function() {
 })
 
 
-/* PIPELINE HANDLING 
+//PIPELINE HANDLING 
 function advancePipeline(data, response, pipeline) {
 	if (pipeline.length > 0) {
 		callback = pipeline[0];
@@ -342,4 +341,3 @@ function concatenate(list1, list2) {
 	}
 	return list1;
 }
-*/
