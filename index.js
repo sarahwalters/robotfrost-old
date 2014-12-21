@@ -29,6 +29,7 @@ app.get('/', function(request, response) {
 
 	pipeline = [read, process, markov];
 	advancePipeline('text/twoCities.txt', response, pipeline);
+	//response.send(overlap(['a', 'b', 'c'], ['b', 'd']));
 })
 
 app.get('/db', function(request, response) {
@@ -77,7 +78,7 @@ function read(filename, response, pipeline) {
 
 function process(data, response, pipeline) {
 	// get words
-	wordsRaw = data.split(/\s/);
+	wordsRaw = data.split(/\W/) // at non-alpha characters (only words)
 	
 	// strip empty words
 	words = [];
@@ -90,6 +91,7 @@ function process(data, response, pipeline) {
 
 	// build lookups for rhyme, markov, & stress
 	var rhyme = {};
+	var stress = {};
 	var prev = {};
 	var post = {};
 	for (var i=0; i < words.length; i++) {
@@ -124,33 +126,81 @@ function process(data, response, pipeline) {
 			} else {
 				rhyme[rp] = [w];
 			}
+
+			// stress pattern
+			s = getStresses(w);
+			if (s in stress) {
+				if (stress[s].indexOf(w) < 0) {
+					stress[s].push(w);
+				}
+			} else {
+				stress[s] = [w];
+			}
 		}
 	}
 
-	advancePipeline(post, response, remPipeline);
+	advancePipeline([rhyme, stress, prev, post], response, remPipeline);
 }
 
-function markov(wordMap, response, pipeline) {
-	count = 0;
-	endCount = 8;
-	res = '';
-
-	seed = 'war';
-	res += seed;
-
-	while (count < endCount) {
-		chooseFrom = wordMap[seed];
-		seed = chooseFrom[chooseFrom.length-1];
-		res += ' ' + seed;
-		count++;
+function markov(dicts, response, pipeline) {
+	// make the stress pattern
+	stressPattern = '';
+	numIambs = 10;
+	for (var i=0; i < numIambs; i++) {
+		stressPattern += '01';
 	}
 
-	advancePipeline(res, response, pipeline);
+	stress = dicts[1];
+	post = dicts[3];
+
+	out = '';
+
+	seed = 'the';
+	out += seed;
+	stressPattern = stressPattern.substring(1);
+
+	while (stressPattern.length > 5) {
+		// which words fit Markov pattern?
+		postList = post[seed];
+
+		// which words fit stress pattern?
+		patternList = []
+		for (var i=1; i < stressPattern.length; i++) {
+			subPattern = stressPattern.substring(0,i);
+			if (subPattern in stress) {
+				patternList = concatenate(patternList, stress[subPattern])
+			}
+		}
+
+		// pick one which fits w/ both & use it
+		chooseFrom = overlap(postList, patternList);
+		seed = chooseFrom[randint(chooseFrom.length)];
+		out += ' ' + seed;
+		removeLength = getStresses(seed).length;
+		stressPattern = stressPattern.substring(removeLength);
+	}
+
+	advancePipeline(out, response, pipeline);
 }
 
 
 
 /* UTILITIES */
+/* ...extracting stress pattern */
+function getStresses(word) {
+	syls = syllables(word);
+	res = '';
+	for (var i=0; i < syls.length; i++) {
+		syl = syls[i];
+		if (syl.indexOf('0') != -1) {
+			res += '0';
+		} else {
+			res += '1';
+		}
+	}
+	return res;
+}
+
 /* ...checking for rhyme */
 function isRhyme(word1, word2, n) {
 	syls1 = syllables(word1);
@@ -172,11 +222,25 @@ function isRhyme(word1, word2, n) {
 function rhymePart(word, n) {
 	syls = syllables(word);
 	res = '';
+
+	// return null OR put together appropriate # of syllables
 	if (syls == null || syls.length < 1) {
 		return null;
 	} else {
 		for (var i=syls.length-1; i > syls.length-1-n; i--) {
 			res = syls[i] + res;
+		}
+	}
+
+	// take off leading consonants
+	stripped = false;
+	vowels = 'AEIOU';
+	while (!stripped) {
+		leading = res.substring(0,1);
+		if (vowels.indexOf(leading) < 0) { 
+			res = res.substring(1); // leading consonant - strip
+		} else { 
+			return res; // found vowel - return
 		}
 	}
 	return res;
@@ -247,4 +311,29 @@ function findVowels(phonemes) {
 		}
 	}
 	return indices;
+}
+
+/* ...random numbers */
+function randint(resolution) {
+	rand = Math.random();
+	return Math.floor(rand*resolution);
+}
+
+/* ...list management */
+function overlap(list1, list2) {
+	var overlap = [];
+	for (var i=0; i < list1.length; i++) {
+		var item = list1[i];
+		if (list2.indexOf(item) != -1) {
+			overlap.push(item);
+		}
+	}
+	return overlap;
+}
+
+function concatenate(list1, list2) {
+	for (var i=0; i < list2.length; i++) {
+		list1.push(list2[i]);
+	}
+	return list1;
 }
