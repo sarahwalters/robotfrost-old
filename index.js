@@ -14,13 +14,15 @@ app.use(express.static(__dirname + '/public'))
 app.get('/', function(request, response) {
 	var result = ''
 	var times = process.env.TIMES || 5
-	for (i=0; i<times; i++) {
+	for (var i=0; i<times; i++) {
 		//result += cool()
 	}
 
-	//result += isRhyme('prosaic', 'mosaic', 1);
-	result = read('text/twoCities.txt', response);
+	//result = isRhyme('prosaic', 'mosaic', 1);
+	//result = rhymePart('prosaic', 2);
 	//response.send(result);
+
+	rhymePairs('text/twoCities.txt', response);
 })
 
 app.get('/db', function(request, response) {
@@ -43,9 +45,30 @@ app.listen(app.get('port'), function() {
 })
 
 /* TEXT INPUT */
-function read(filename, response) {
+function rhymePairs(filename, response) {
 	fs.readFile(filename, 'ascii', function(err, data) {
-		response.send(data);
+		// individual words
+		words = data.split(/\s/);
+
+
+		// rhyme parts
+		rhymeDict = {};
+		rhymeParts = [];
+		for (var i=0; i < words.length; i++) {
+			w = words[i].toLowerCase();
+			rp = rhymePart(w,1);
+			if (rp != null) {
+				if (rp in rhymeDict) {
+					if (rhymeDict[rp].indexOf(w) < 0) {
+						rhymeDict[rp].push(w);
+					}
+				} else {
+					rhymeDict[rp] = [w];
+				}
+			}
+		}
+
+		response.send(rhymeDict);
 	});
 }
 
@@ -65,6 +88,19 @@ function isRhyme(word1, word2, n) {
 	}
 
 	return true;
+}
+
+function rhymePart(word, n) {
+	syls = syllables(word);
+	res = '';
+	if (syls == null || syls.length < 1) {
+		return null;
+	} else {
+		for (var i=syls.length-1; i > syls.length-1-n; i--) {
+			res = syls[i] + res;
+		}
+	}
+	return res;
 }
 
 
@@ -124,7 +160,7 @@ function syllables(word) {
 
 function findVowels(phonemes) {
 	indices = [];
-	for (i=0; i < phonemes.length; i++) {
+	for (var i=0; i < phonemes.length; i++) {
 		p = phonemes[i];
 		isVowel = (p.indexOf('2') != -1) || (p.indexOf('1') != -1) || (p.indexOf('0') != -1);
 		if (isVowel) {
