@@ -1,5 +1,4 @@
 /* TODO:
--> strip punctuation
 -> run db locally
 -> subarray method
 */
@@ -37,7 +36,7 @@ app.configure(function() {
 app.use(NPM.express.static(__dirname + '/public'))
 
 app.get('/', function(request, response) {
-	pipeline = [read, digest, markov, render];
+	pipeline = [read, digest, generate, render];
 	console.log('Starting pipeline');
 	advancePipeline('text/twoCities.txt', response, pipeline);
 })
@@ -90,7 +89,7 @@ function read(filename, response, pipeline) {
 
 function digest(data, response, pipeline) {
 	// get words
-	wordsRaw = data.split(/\W/) // at non-alpha characters (only words)
+	wordsRaw = data.split(/(?!')\W/) // at non-alpha characters (only words)
 	
 	// strip empty words
 	words = [];
@@ -152,67 +151,127 @@ function digest(data, response, pipeline) {
 		}
 	}
 
-	console.log('Starting Markov');
+	console.log('Starting generate');
 	advancePipeline([rhyme, stress, prev, post], response, remPipeline);
 }
 
-function markov(dicts, response, pipeline) {
+function generate(dicts, response, pipeline) {
+	// unpack
+	rhyme = dicts[0];
+	stress = dicts[1];
+	post = dicts[3];
+
 	// make the stress pattern
 	stressPattern = '';
-	numIambs = 10;
+	numIambs = 5;
 	for (var i=0; i < numIambs; i++) {
 		stressPattern += '01';
 	}
 
-	stress = dicts[1];
-	post = dicts[3];
+	rhymePattern = '01012323454566';
 
-	out = '';
+	// choose the end rhymes
+	var endRhymes = [];
+	while (endRhymes.length < 7) {
+		var key = UTILS.random.randChoice(rhyme);
+		var words = rhyme[key];
 
-	seed = 'the';
-	out += seed;
-	stressPattern = stressPattern.substring(1);
+		var usableWords = [];
+		for (var i=0; i<words.length; i++) {
+			var word = words[i];
+			var syls = UTILS.syls.getSyllables(word, c);
+			var sp = UTILS.stress.getStresses(syls);
 
-	while (stressPattern.length > 5) {
-		// which words fit Markov pattern?
-		postList = post[seed];
+			// fits stress pattern?
+			var usable = true;
+			for (var j=0; j<sp.length; j++) {
+				if (sp[sp.length-j-1] != stressPattern[stressPattern.length-j-1]) {
+					usable = false;
+				}
+			}
 
-		// which words fit stress pattern?
-		patternList = []
-		for (var i=1; i < stressPattern.length; i++) {
-			subPattern = stressPattern.substring(0,i);
-			if (subPattern in stress) {
-				patternList = patternList.concat(stress[subPattern])
+			if (usable) {
+				usableWords.push(word);
 			}
 		}
 
-		// pick one which fits w/ both & use it
-		chooseFrom = UTILS.lists.overlap(postList, patternList);
-		if (chooseFrom.length == 0) {
-			chooseFrom = ['was', 'the'];
+		if (usableWords.length > 2) {
+			endRhymes.push(usableWords);
 		}
-		seed = chooseFrom[UTILS.random.randint(chooseFrom.length)];
-		seedSyls = UTILS.syls.getSyllables(seed, c);
-		seedStress = UTILS.stress.getStresses(seedSyls);
-		while (seedStress == null || seedStress.length == 0) {
-			seed = chooseFrom[UTILS.random.randint(chooseFrom.length)];
-			seedStress = UTILS.stress.getStresses(seedSyls);
-		}
+	}
 
-		out += ' ' + seed;
-		removeLength = seedStress.length;
-		stressPattern = stressPattern.substring(removeLength);
+	// generate poem
+	var out = '';
+	var poem = [];
+
+	// initial end rhyme
+	for (var i=0; i < rhymePattern.length; i++) {
+		var rhymesIndex = parseInt(rhymePattern.substring(i,i+1));
+		var rhymes = endRhymes[rhymesIndex];
+
+		var choiceIndex = UTILS.random.randint(rhymes.length);
+		var choice = rhymes[choiceIndex];
+		endRhymes[rhymesIndex].splice(choiceIndex,1); // don't reuse words
+
+		// update stress pattern for line
+		var choiceSyls = UTILS.syls.getSyllables(choice, c);
+		var choiceStress = UTILS.stress.getStresses(choiceSyls);
+		var updatedsp = stressPattern.substring(0, stressPattern.length-choiceStress.length);
+
+		// push line and stress pattern to poem
+		var line = choice;
+
+		poem.push([line, updatedsp]);
+	}
+
+	// rest of pattern
+	for (var i=0; i < poem.length; i++) {
+		var line = poem[i];
+
+		while (line[1].length > 0) {
+			// possible words
+			var patternList = []
+			for (var j=line[1].length-1; j >= 0; j--) {
+				subPattern = line[1].substring(j);
+				if (subPattern in stress) {
+					patternList = patternList.concat(stress[subPattern]);
+				}
+			}
+
+			// choose one
+			var choiceIndex = UTILS.random.randint(patternList.length);
+			var choice = patternList[choiceIndex];
+
+			var choiceSyls = UTILS.syls.getSyllables(choice, c);
+			var choiceStress = UTILS.stress.getStresses(choiceSyls);
+			line[1] = line[1].substring(0, line[1].length-choiceStress.length);
+			line[0] = choice + ' ' + line[0];
+		}
 	}
 
 	console.log('Done');
-	advancePipeline(out, response, pipeline);
+	advancePipeline(poem, response, pipeline);
 }
 
 function render(data, response, pipeline) {
-	poemArray = [data, data, data];
+	poem = [];
+	for (var i=0; i < data.length; i++) {
+		var line = data[i];
+		poem.push(line[0]);
+	}
+
+	var words = poem.join(' ').split(' ');
+
+	var titleLength = UTILS.random.randint(2)+1;
+	var title = '';
+	for (var i=0; i < titleLength; i++) {
+		var choice = words[UTILS.random.randint(words.length)];
+		title = title + ' ' + choice;
+	}
+
 	response.render('layout.jade', {
-		poem: poemArray,
-		title: 'test title',
+		poem: poem,
+		title: title,
 		author: 'Robot Frost'
 	});
 }
