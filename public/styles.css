@@ -1,0 +1,8 @@
+p {
+	color: red;
+}
+
+div#poem {
+	width: 50%;
+	margin: 0 auto;
+}

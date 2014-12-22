@@ -7,6 +7,7 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "jade": "*",
     "fs": "*",
     "cmudict": "*",
     "pg": "4.x",

@@ -10,7 +10,8 @@ var NPM = {
 	express: require('express'),
 	pg: require('pg'),
 	fs: require('fs'),
-	cmu: require('cmudict').CMUDict
+	cmu: require('cmudict').CMUDict,
+	jade: require('jade')
 }
 
 var UTILS = {
@@ -18,7 +19,7 @@ var UTILS = {
 	stress: require('./js/stress.js'),
 	syls: require('./js/syllables.js'),
 	lists: require('./js/lists.js'),
-	random: require('./js/random.js')
+	random: require('./js/random.js'),
 }
 
 
@@ -28,11 +29,15 @@ var app = NPM.express();
 
 
 // APP ROUTING
-app.set('port', process.env.PORT || 5000)
+app.configure(function() {
+	app.set('port', process.env.PORT || 5000)
+	app.set('view engine', 'jade');
+})
+
 app.use(NPM.express.static(__dirname + '/public'))
 
 app.get('/', function(request, response) {
-	pipeline = [read, digest, markov];
+	pipeline = [read, digest, markov, render];
 	console.log('Starting pipeline');
 	advancePipeline('text/twoCities.txt', response, pipeline);
 })
@@ -201,4 +206,10 @@ function markov(dicts, response, pipeline) {
 
 	console.log('Done');
 	advancePipeline(out, response, pipeline);
+}
+
+function render(data, response, pipeline) {
+	response.render('layout.jade', {
+		poem: data + '</br>' + 
+	});
 }
