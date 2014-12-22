@@ -2,7 +2,11 @@ p {
 	color: red;
 }
 
-div#poem {
+div#attrib p {
+	text-align: right;
+}
+
+div {
 	width: 50%;
 	margin: 0 auto;
 }

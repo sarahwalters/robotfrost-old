@@ -210,6 +210,8 @@ function markov(dicts, response, pipeline) {
 
 function render(data, response, pipeline) {
 	response.render('layout.jade', {
-		poem: data + '</br>' + 
+		poem: data,
+		title: 'test title',
+		author: 'Robot Frost'
 	});
 }
