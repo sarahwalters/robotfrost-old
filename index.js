@@ -209,8 +209,9 @@ function markov(dicts, response, pipeline) {
 }
 
 function render(data, response, pipeline) {
+	poemArray = [data, data, data];
 	response.render('layout.jade', {
-		poem: data,
+		poem: poemArray,
 		title: 'test title',
 		author: 'Robot Frost'
 	});

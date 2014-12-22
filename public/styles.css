@@ -1,12 +1,27 @@
-p {
-	color: red;
-}
-
-div#attrib p {
-	text-align: right;
-}
-
 div {
-	width: 50%;
 	margin: 0 auto;
+	display: block;
 }
+	div#main {
+		margin: 50px auto;
+	}
+
+h1 {
+	font-size: 24;
+}
+
+p {
+	font-size: 16;
+}
+
+	div#poem p {
+		display: block;
+		float: left;
+		margin: 5px 0;
+	}
+
+	div#attrib p {
+		margin: 10px 0;
+		text-align: right;
+		font-style: italic;
+	}

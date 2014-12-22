@@ -2,12 +2,15 @@ html(lang='en')
 	head
 		title Poem Ipsum
 		link(href='styles.css', rel='stylesheet')
+		script(type='text/javascript', src='http://code.jquery.com/jquery-1.9.1.min.js')
+		script(type='text/javascript', src='sizing.js')
 
 	body
-		div#header
-			h1= title
-		div#poem
-			p= poem
-			p= poem
-		div#attrib
-			p -- #{author}
+		div#main
+			div#header
+				h1= title
+			div#poem
+				each line in poem
+					p= line
+			div#attrib
+				p -- #{author}
