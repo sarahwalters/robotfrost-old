@@ -11,7 +11,7 @@
     "fs": "*",
     "cmudict": "*",
     "pg": "4.x",
-    "express": "~3.4.x",
+    "express": "~3.4.x"
   },
   "engines": {
     "node": "0.10.x"
