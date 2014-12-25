@@ -9,7 +9,6 @@ var NPM = {
 	express: require('express'),
 	pg: require('pg'),
 	fs: require('fs'),
-	cmu: require('cmudict').CMUDict,
 	jade: require('jade')
 }
 
@@ -23,7 +22,6 @@ var UTILS = {
 
 
 // INITIALIZATIONS
-var c = new NPM.cmu();
 var app = NPM.express();
 
 
@@ -36,9 +34,7 @@ app.configure(function() {
 app.use(NPM.express.static(__dirname + '/public'))
 
 app.get('/', function(request, response) {
-	pipeline = [read, digest, generate, render];
-	console.log('Starting pipeline');
-	advancePipeline('text/twoCities.txt', response, pipeline);
+	startPipeline(response);
 })
 
 app.get('/db', function(request, response) {
@@ -62,6 +58,11 @@ app.listen(app.get('port'), function() {
 
 
 //PIPELINE HANDLING 
+function startPipeline(response) {
+	pipeline = [read, digest, generate, render];
+	console.log('Starting pipeline');
+	advancePipeline('text/twoCities.txt', response, pipeline);
+}
 function advancePipeline(data, response, pipeline) {
 	if (pipeline.length > 0) {
 		callback = pipeline[0];
@@ -107,7 +108,7 @@ function digest(data, response, pipeline) {
 	var post = {};
 	for (var i=0; i < words.length; i++) {
 		w = words[i].toLowerCase();
-		s = UTILS.syls.getSyllables(w, c);
+		s = UTILS.syls.getSyllables(w);
 		rp = UTILS.rhyme.rhymePart(s,1);
 		if (rp != null) { // ie word can be broken into phonemes
 			// preceding word
@@ -159,6 +160,7 @@ function generate(dicts, response, pipeline) {
 	// unpack
 	rhyme = dicts[0];
 	stress = dicts[1];
+	pre = dicts[2];
 	post = dicts[3];
 
 	// make the stress pattern
@@ -179,18 +181,45 @@ function generate(dicts, response, pipeline) {
 		var usableWords = [];
 		for (var i=0; i<words.length; i++) {
 			var word = words[i];
-			var syls = UTILS.syls.getSyllables(word, c);
+			var syls = UTILS.syls.getSyllables(word);
 			var sp = UTILS.stress.getStresses(syls);
 
-			// fits stress pattern?
 			var usable = true;
+			// fits stress pattern?
 			for (var j=0; j<sp.length; j++) {
 				if (sp[sp.length-j-1] != stressPattern[stressPattern.length-j-1]) {
 					usable = false;
 				}
 			}
 
+			// at least one previous word fits stress pattern too?
+			var validPreCount = 0;
 			if (usable) {
+				var checksp = stressPattern.substring(0, stressPattern.length-sp.length);
+				var preceding = pre[word];
+
+				for (var j=0; j<preceding.length; j++) {
+					var preWord = preceding[j];
+					var presyls = UTILS.syls.getSyllables(preWord);
+					var presp = UTILS.stress.getStresses(presyls);
+					var isValidPre = true;
+					if (presp == null) {
+						isValidPre = false;
+					} else {
+						for (var k=0; k<presp.length; k++) {
+							if (presp[presp.length-k-1] != checksp[checksp.length-k-1]) {
+								isValidPre = false;
+							}
+						}
+					}
+
+					if (isValidPre) {
+						validPreCount++;
+					}
+				}
+			}
+
+			if (usable && validPreCount > 0) {
 				usableWords.push(word);
 			}
 		}
@@ -201,7 +230,6 @@ function generate(dicts, response, pipeline) {
 	}
 
 	// generate poem
-	var out = '';
 	var poem = [];
 
 	// initial end rhyme
@@ -214,19 +242,19 @@ function generate(dicts, response, pipeline) {
 		endRhymes[rhymesIndex].splice(choiceIndex,1); // don't reuse words
 
 		// update stress pattern for line
-		var choiceSyls = UTILS.syls.getSyllables(choice, c);
+		var choiceSyls = UTILS.syls.getSyllables(choice);
 		var choiceStress = UTILS.stress.getStresses(choiceSyls);
 		var updatedsp = stressPattern.substring(0, stressPattern.length-choiceStress.length);
 
-		// push line and stress pattern to poem
-		var line = choice;
-
-		poem.push([line, updatedsp]);
+		// push end word choice and stress pattern to poem
+		poem.push([[choice], updatedsp]);
 	}
 
 	// rest of pattern
+	var backtrackCount = 0;
 	for (var i=0; i < poem.length; i++) {
 		var line = poem[i];
+		backtrackCount = 0;
 
 		while (line[1].length > 0) {
 			// possible words
@@ -238,14 +266,36 @@ function generate(dicts, response, pipeline) {
 				}
 			}
 
-			// choose one
-			var choiceIndex = UTILS.random.randint(patternList.length);
-			var choice = patternList[choiceIndex];
+			var lastWord = line[0][0];
+			var preList = pre[lastWord];
+			var choices = UTILS.lists.overlap(preList, patternList);
+			if (choices.length == 0) {
+				backtrackCount++;
+				if (backtrackCount > 5) {
+					choices = patternList;
+					var choiceIndex = UTILS.random.randint(choices.length);
+					var choice = choices[choiceIndex];
 
-			var choiceSyls = UTILS.syls.getSyllables(choice, c);
-			var choiceStress = UTILS.stress.getStresses(choiceSyls);
-			line[1] = line[1].substring(0, line[1].length-choiceStress.length);
-			line[0] = choice + ' ' + line[0];
+					var choiceSyls = UTILS.syls.getSyllables(choice);
+					var choiceStress = UTILS.stress.getStresses(choiceSyls);
+					line[1] = line[1].substring(0, line[1].length-choiceStress.length);
+					line[0] = [choice].concat(line[0]);
+				} else {
+					var rem = line[0].splice(0,1);
+					var remSyls = UTILS.syls.getSyllables(rem[0]);
+					var remStress = UTILS.stress.getStresses(remSyls);
+					line[1] += remStress;
+				}
+			} else {
+				// choose one
+				var choiceIndex = UTILS.random.randint(choices.length);
+				var choice = choices[choiceIndex];
+
+				var choiceSyls = UTILS.syls.getSyllables(choice);
+				var choiceStress = UTILS.stress.getStresses(choiceSyls);
+				line[1] = line[1].substring(0, line[1].length-choiceStress.length);
+				line[0] = [choice].concat(line[0]);
+			}
 		}
 	}
 
@@ -257,7 +307,7 @@ function render(data, response, pipeline) {
 	poem = [];
 	for (var i=0; i < data.length; i++) {
 		var line = data[i];
-		poem.push(line[0]);
+		poem.push(line[0].join(' '));
 	}
 
 	var words = poem.join(' ').split(' ');

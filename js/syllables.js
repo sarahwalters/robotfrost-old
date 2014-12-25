@@ -1,4 +1,14 @@
-exports.getSyllables = function(word, c) {
+// REQUIRE STATEMENTS
+var NPM = {
+	cmu: require('cmudict').CMUDict
+}
+
+// INITIALIZATIONS
+var c = new NPM.cmu();
+
+
+// METHODS
+exports.getSyllables = function(word) {
 	try {
 		var phonemes = c.get(word).split(' '); // array
 
