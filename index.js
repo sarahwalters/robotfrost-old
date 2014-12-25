@@ -303,25 +303,35 @@ function generate(dicts, response, pipeline) {
 		}
 	}
 
+	// make a title
+	poemArr = [];
+	for (var i=0; i < poem.length; i++) {
+		var line = poem[i];
+		poemArr.push(line[0].join(' '));
+	}
+
+	var words = poemArr.join(' ').split(' ');
+	var titleLength = UTILS.random.randint(2)+1;
+	var titleArr = [];
+
+	var choice = words[UTILS.random.randint(words.length)];
+	if (choice.length > 3) {
+		titleArr.push(choice);
+	}
+
+	while (titleArr.length < titleLength) {
+		var choices = pre[words[0]];
+		var choice = choices[UTILS.random.randint(choices.length)];
+		titleArr = [choice].concat(titleArr);
+	}
+
 	console.log('Done');
-	advancePipeline(poem, response, pipeline);
+	advancePipeline([poemArr, titleArr], response, pipeline);
 }
 
 function render(data, response, pipeline) {
-	poem = [];
-	for (var i=0; i < data.length; i++) {
-		var line = data[i];
-		poem.push(line[0].join(' '));
-	}
-
-	var words = poem.join(' ').split(' ');
-
-	var titleLength = UTILS.random.randint(2)+1;
-	var title = '';
-	for (var i=0; i < titleLength; i++) {
-		var choice = words[UTILS.random.randint(words.length)];
-		title = title + ' ' + choice;
-	}
+	poem = data[0];
+	title = data[1].join(' ');
 
 	response.render('layout.jade', {
 		poem: poem,
