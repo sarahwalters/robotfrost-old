@@ -3,7 +3,9 @@ html(lang='en')
 		title Poem Ipsum
 		link(href='styles.css', rel='stylesheet')
 		script(type='text/javascript', src='http://code.jquery.com/jquery-1.9.1.min.js')
+		script(type='text/javascript', src='main.js')
 		script(type='text/javascript', src='sizing.js')
+		script(type='text/javascript', src='events.js')
 
 	body
 		div#main
@@ -14,3 +16,8 @@ html(lang='en')
 					p= line
 			div#attrib
 				p -- #{author}
+			div#button
+				button(id="regenerate") Regenerate
+
+		div#blockui
+			p Generating...

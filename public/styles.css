@@ -3,8 +3,23 @@ div {
 	display: block;
 }
 	div#main {
+		display: block;
 		margin: 50px auto;
 	}
+
+	div#button {
+		height: 40px;
+	}
+
+	div#blockui {
+		margin: 50px auto;
+		display: none;
+	}
+
+button {
+	margin-top: 20px;
+	height: 20px;
+}
 
 h1 {
 	font-size: 24;
@@ -24,4 +39,10 @@ p {
 		margin: 10px 0;
 		text-align: right;
 		font-style: italic;
+	}
+
+	div#blockui p {
+		font-size: 20;
+		margin-top;
+		text-align: center;
 	}
