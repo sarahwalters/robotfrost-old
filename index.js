@@ -34,7 +34,13 @@ app.configure(function() {
 app.use(NPM.express.static(__dirname + '/public'))
 
 app.get('/', function(request, response) {
-	startPipeline(response);
+	console.log('Got home')
+	response.render('layout.jade', {
+		introScreen: true,
+		introTitle: 'Poem Ipsum',
+		introText: 'Poem Ipsum uses a first-order Markov model and natural language processing to produce dummy text Shakespearean sonnets based on "A Tale of Two Cities" by Charles Dickens.'
+	});
+	//startPipeline(response);
 })
 
 app.get('/db', function(request, response) {
@@ -61,7 +67,7 @@ app.listen(app.get('port'), function() {
 })
 
 
-//PIPELINE HANDLING 
+//PIPELINE HANDLING
 function startPipeline(response) {
 	pipeline = [read, digest, generate, render];
 	console.log('Starting pipeline');
@@ -84,7 +90,7 @@ function advancePipeline(data, response, pipeline) {
 }
 
 
-// PIPELINE STAGES 
+// PIPELINE STAGES
 function read(filename, response, pipeline) {
 	NPM.fs.readFile(filename, 'ascii', function(err, data) {
 		console.log('Starting process');
@@ -95,7 +101,7 @@ function read(filename, response, pipeline) {
 function digest(data, response, pipeline) {
 	// get words
 	wordsRaw = data.split(/(?!')\W/) // at non-alpha characters (only words)
-	
+
 	// strip empty words
 	words = [];
 	for (var i=0; i < wordsRaw.length; i++) {
@@ -334,6 +340,7 @@ function render(data, response, pipeline) {
 	title = data[1].join(' ');
 
 	response.render('layout.jade', {
+		introScreen: false,
 		poem: poem,
 		title: title,
 		author: 'Robot Frost'

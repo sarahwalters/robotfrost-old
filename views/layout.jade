@@ -9,15 +9,22 @@ html(lang='en')
 
 	body
 		div#main
-			div#header
-				h1= title
-			div#poem
-				each line in poem
-					p= line
-			div#attrib
-				p -- #{author}
+			if introScreen
+				div#introHeader
+					h1= introTitle
+				div#introText
+					p= introText
+			else
+				div#header
+					h1= title
+				div#poem
+					each line in poem
+						p= line
+				div#attrib
+					p -- #{author}
+
 			div#button
-				button(id="regenerate") Regenerate
+				button(id="generate") Generate
 
 		div#blockui
 			p Generating...

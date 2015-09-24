@@ -1,11 +1,11 @@
 var EVENTS = {
 	register: function() {
-		$('#regenerate').on('click', function() {
+		$('#generate').on('click', function() {
 			var mainHeight = $('#main').height();
 			$('#main').css('display','none');
 			$('#blockui').css('display', 'block');
-			$('#blockui p').css('margin-top', mainHeight/2 + 'px');
-			
+			$('#blockui p').css('margin-top', '100px');
+
 			$.ajax('/test', {
 				type: 'POST',
 				data: JSON.stringify({test:'hello'}),
