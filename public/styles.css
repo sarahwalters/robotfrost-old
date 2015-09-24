@@ -1,3 +1,7 @@
+* {
+	font-family: serif;
+}
+
 div {
 	margin: 0 auto;
 	display: block;
@@ -5,6 +9,10 @@ div {
 	div#main {
 		display: block;
 		margin: 50px auto;
+	}
+
+	div#introText {
+		line-height: 2em;
 	}
 
 	div#button {
@@ -18,7 +26,21 @@ div {
 
 button {
 	margin-top: 20px;
-	height: 20px;
+	-webkit-border-radius: 3;
+  -moz-border-radius: 3;
+  border-radius: 3px;
+  border: none;
+  color: #ffffff;
+  font-size: 16px;
+  background: #990000;
+  padding: 6px 10px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button:hover {
+	background: #c20000;
+  text-decoration: none;
 }
 
 h1 {
@@ -32,7 +54,8 @@ p {
 	div#poem p {
 		display: block;
 		float: left;
-		margin: 5px 0;
+		margin: 0;
+		line-height: 2em;
 	}
 
 	div#attrib p {
